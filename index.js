@@ -64,9 +64,13 @@ exports.execute=function(config, callback) {
 			},
 			function(callback) {
 				// take our XLXS bare bones template and expand it to the file system. We will amend it.
-				var zip=new zipper(template.XLSX);
-				zip.extractAllTo(dirPath);
-				callback();
+				try {
+					var zip=new zipper(template.XLSX);
+					zip.extractAllTo(dirPath);
+					callback();
+				} catch(error) {
+					callback("extraction failed: " + error);
+				}
 			},
 			function(callback) {
 				p=config.stylesXmlFile || __dirname+'/resources/styles.xml';
@@ -188,8 +192,7 @@ exports.execute=function(config, callback) {
 				fs.writeFile(p, sharedStringsFront+convertedShareStrings+template.sharedStringsBack, callback);
 			},
 			function(callback) {
-				var zip=new zipper(),
-					zipFile=path.join(dirPath, 'data.zip');
+				var zip=new zipper();
 				// zip it ALL up so that we can grab the compressed buffer
 				zip.addLocalFolder(dirPath);
 				zip.toBuffer(function(data) {
