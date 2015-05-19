@@ -20,7 +20,6 @@ exports.execute=function(config, callback) {
 		data=config.rows,
 		colsLength=cols.length,
 		p,
-		files=[],
 		styleIndex,
 		k=0,
 		cn=1,
@@ -35,7 +34,7 @@ exports.execute=function(config, callback) {
 		var off=0;
 		var written=0;
 
-		return async.whilst(
+		async.whilst(
 			function() {
 				return written<buf.length;
 			},
@@ -56,90 +55,65 @@ exports.execute=function(config, callback) {
 		);
 	};
 
-	return async.waterfall([
+	async.waterfall([
 			function(callback) {
-				return temp.mkdir('xlsx', function(err, dir) {
-					if(err) {
-						return callback(err);
-					}
-
+				temp.mkdir('xlsx', function(err, dir) {
 					dirPath=dir;
-					return callback();
+					callback(err);
 				});
 			},
 			function(callback) {
-				return fs.mkdir(path.join(dirPath, 'xl'), callback);
+				// take our XLXS bare bones template and expand it to the file system. We will amend it.
+				var zip=new zipper(template.XLSX);
+				zip.extractAllTo(dirPath);
+				callback();
 			},
 			function(callback) {
-				return fs.mkdir(path.join(dirPath, 'xl', 'worksheets'), callback);
-			},
-			function(callback) {
-				return async.parallel([
-					function(callback) {
-						return fs.writeFile(path.join(dirPath, 'data.zip'), template.XLSX, callback);
-					},
-					function(callback) {
-						if(!config.stylesXmlFile) {
-							return callback();
-						}
-
-						p=config.stylesXmlFile || __dirname+'/resources/styles.xml';
-						return fs.readFile(p, 'utf8', function(err, styles) {
-							if(err) {
-								return callback(err);
-							}
-
-							p=path.join(dirPath, 'xl', 'styles.xml');
-							files.push(p);
-							return fs.writeFile(p, styles, callback);
-						});
+				p=config.stylesXmlFile || __dirname+'/resources/styles.xml';
+				fs.readFile(p, 'utf8', function(err, styles) {
+					if(err) {
+						return callback(err);
 					}
-				], function(err) {
-					return callback(err);
-				})
+					p=path.join(dirPath, 'xl', 'styles.xml');
+					fs.writeFile(p, styles, callback);
+				});
 			},
 			function(callback) {
 				p=path.join(dirPath, 'xl', 'worksheets', 'sheet.xml');
-				files.push(p);
-				return fs.open(p, 'a+', function(err, fd) {
-					if(err) {
-						return callback(err);
-					}
-
+				fs.open(p, 'a+', function(err, fd) {
 					sheet=fd;
-
-					return callback();
+					callback(err);
 				});
 			},
 			function(callback) {
-				return write(template.sheetFront, callback);
+				write(template.sheetFront, callback);
 			},
 			function(callback) {
-				return async.eachSeries(cols, function(col, callback) {
+				async.eachSeries(cols, function(col, _callback) {
 					var colStyleIndex=col.styleIndex || 0;
 					var res=util.format('<x:col min="%d" max="%d" width="%d" customWidth="1" style="%d"/>',
 						cn, cn, (col.width ? col.width : 10), colStyleIndex);
 					cn++;
-					return write(res, callback);
+					write(res, _callback);
 				}, callback);
 			},
 			function(callback) {
-				return write('</cols><x:sheetData>', callback);
+				write('</cols><x:sheetData>', callback);
 			},
 			function(callback) {
-				return write('<x:row r="1" spans="1:'+colsLength+'">', callback);
+				write('<x:row r="1" spans="1:'+colsLength+'">', callback);
 			},
 			function(callback) {
-				return async.eachSeries(cols, function(col, callback) {
+				async.eachSeries(cols, function(col, _callback) {
 					var colStyleIndex=col.captionStyleIndex || 0;
 					var res=addStringCol(getColumnLetter(k+1)+1, col.caption, colStyleIndex, shareStrings);
 					k++;
 					convertedShareStrings+=res[1];
-					return write(res[0], callback);
+					write(res[0], _callback);
 				}, callback);
 			},
 			function(callback) {
-				return write('</x:row>', callback);
+				write('</x:row>', callback);
 			},
 			function(callback) {
 				var j, r, cellData, currRow, cellType;
@@ -147,11 +121,11 @@ exports.execute=function(config, callback) {
 
 				data.reverse();
 
-				return async.whilst(
+				async.whilst(
 					function() {
 						return data.length>0;
 					},
-					function(callback) {
+					function(_callback) {
 						i++;
 						r=data.pop();
 						currRow=i+2;
@@ -195,16 +169,14 @@ exports.execute=function(config, callback) {
 
 						row+='</x:row>';
 
-						return write(row, callback);
-					},
-					callback
-				);
+						write(row, _callback);
+					}, callback);
 			},
 			function(callback) {
-				return write(template.sheetBack, callback);
+				write(template.sheetBack, callback);
 			},
 			function(callback) {
-				return fs.close(sheet, callback);
+				fs.close(sheet, callback);
 			},
 			function(callback) {
 				if(shareStrings.length===0) {
@@ -213,44 +185,22 @@ exports.execute=function(config, callback) {
 
 				var sharedStringsFront=template.sharedStringsFront.replace(/\$count/g, shareStrings.length);
 				p=path.join(dirPath, 'xl', 'sharedStrings.xml');
-				files.push(p);
-				return fs.writeFile(p, sharedStringsFront+convertedShareStrings+template.sharedStringsBack, callback);
+				fs.writeFile(p, sharedStringsFront+convertedShareStrings+template.sharedStringsBack, callback);
 			},
 			function(callback) {
-				var zipfile=new zipper(path.join(dirPath, 'data.zip'));
-				files.forEach(function(file) {
-					var relative=path.relative(dirPath, file);
-					return zipfile.addLocalFile(file);
-				});
-				fs.readFile(path.join(dirPath, 'data.zip'), callback);
+				var zip=new zipper(),
+					zipFile=path.join(dirPath, 'data.zip');
+				// zip it ALL up so that we can grab the compressed buffer
+				zip.addLocalFolder(dirPath);
+				zip.toBuffer(function(data) {
+					callback(null, data);
+				}, callback);
 			}],
 		function(err, data) {
-			if(err) {
-				return callback(err);
-			}
-
 			temp.cleanup();
-			return callback(null, data);
+			callback(err, data);
 		}
 	);
-};
-
-var startTag=function(obj, tagName, closed) {
-	var result="<"+tagName, p;
-	for(p in obj) {
-		result+=" "+p+"="+obj[p];
-	}
-	if(!closed) {
-		result+=">";
-	} else {
-		result+="/>";
-	}
-
-	return result;
-};
-
-var endTag=function(tagName) {
-	return "</"+tagName+">";
 };
 
 var addNumberCol=function(cellRef, value, styleIndex) {
