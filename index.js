@@ -1,9 +1,10 @@
+var async=require('async');
 var fs=require('fs');
 var temp=require('temp').track();
 var path=require('path');
 var zipper=require('adm-zip');
-var async=require('async');
 var util=require('util');
+var child_process=require('child_process');
 var template=require('./resources/template');
 
 Date.prototype.getJulian=function() {
@@ -186,19 +187,26 @@ exports.execute=function(config, callback) {
 				if(shareStrings.length===0) {
 					return callback();
 				}
-
 				var sharedStringsFront=template.sharedStringsFront.replace(/\$count/g, shareStrings.length);
 				p=path.join(dirPath, 'xl', 'sharedStrings.xml');
 				fs.writeFile(p, sharedStringsFront+convertedShareStrings+template.sharedStringsBack, callback);
 			},
 			function(callback) {
-				var zip=new zipper();
-				// zip it ALL up so that we can grab the compressed buffer
-				zip.addLocalFolder(dirPath);
-				zip.toBuffer(function(data) {
-					callback(null, data);
-				}, callback);
-			}],
+				var target=path.join(dirPath, "sheet.zip");
+				// I'm having trouble with adm-zip's zip encoding. Not sure what the problem is exactly
+				// but spending more time on this problem than I meant to - going native.
+				async.waterfall([
+					function(done) {
+						child_process.exec(util.format('zip -r "%s" .', target), {cwd: dirPath}, function(error) {
+							done(error);
+						});
+					},
+					function(done) {
+						fs.readFile(target, done);
+					}
+				], callback);
+			}
+		],
 		function(err, data) {
 			temp.cleanup();
 			callback(err, data);
