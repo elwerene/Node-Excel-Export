@@ -16,7 +16,13 @@ Date.prototype.oaDate=function() {
 	return (this-new Date(Date.UTC(1899, 11, 30)))/(24*60*60*1000);
 };
 
-exports.execute=function(config, callback) {
+/**
+ * build xlsx buffer or file depending on whether target is specified or not
+ * @param config per row/column descriptions
+ * @param target optional target path/file
+ * @param callback function(error, buffer/file)
+ */
+exports.execute=function(config, target, callback) {
 	var cols=config.cols,
 		data=config.rows,
 		colsLength=cols.length,
@@ -29,6 +35,11 @@ exports.execute=function(config, callback) {
 		convertedShareStrings="",
 		sheet,
 		sheetPos=0;
+
+	if(typeof(target)==="function") {
+		callback=target;
+		target=null;
+	}
 
 	var write=function(str, callback) {
 		var buf=new Buffer(str);
@@ -192,24 +203,30 @@ exports.execute=function(config, callback) {
 				fs.writeFile(p, sharedStringsFront+convertedShareStrings+template.sharedStringsBack, callback);
 			},
 			function(callback) {
-				var target=path.join(dirPath, "sheet.zip");
+				var _target=(target)
+					? path.resolve(target)
+					: path.join(dirPath, "sheet.zip");
 				// I'm having trouble with adm-zip's zip encoding. Not sure what the problem is exactly
 				// but spending more time on this problem than I meant to - going native.
 				async.waterfall([
 					function(done) {
-						child_process.exec(util.format('zip -r "%s" .', target), {cwd: dirPath}, function(error) {
+						child_process.exec(util.format('zip -r "%s" .', _target), {cwd: dirPath}, function(error) {
 							done(error);
 						});
 					},
 					function(done) {
-						fs.readFile(target, done);
+						if(target) {
+							callback(null, target);
+						} else {
+							fs.readFile(_target, done);
+						}
 					}
 				], callback);
 			}
 		],
-		function(err, data) {
+		function(err, result) {
 			temp.cleanup();
-			callback(err, data);
+			callback(err, result);
 		}
 	);
 };
