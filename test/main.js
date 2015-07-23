@@ -1,4 +1,5 @@
 // test/main.js
+var async=require("async");
 var should=require('should');
 var nodeExcel=require('../index');
 
@@ -29,11 +30,13 @@ describe('Simple Excel xlsx Export', function() {
 		});
 
 		it('returns path', function(done) {
-			nodeExcel.execute(conf, "./test/d.xlsx", function(err, result) {
-				should.not.exist(err);
-				should.equal(result, "./test/d.xlsx");
-				done();
-			});
+			async.times(10, function(index, _done) {
+				nodeExcel.execute(conf, "./test/d.xlsx"+index, function(err, result) {
+					should.not.exist(err);
+					should.equal(result, "./test/d.xlsx"+index);
+					_done();
+				});
+			}, done);
 		});
 	});
 });

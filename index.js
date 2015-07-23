@@ -1,3 +1,4 @@
+var assert=require('assert');
 var async=require('async');
 var fs=require('fs');
 var temp=require('temp').track();
@@ -30,7 +31,7 @@ exports.execute=function(config, target, callback) {
 		styleIndex,
 		k=0,
 		cn=1,
-		dirPath,
+		tmpDir,
 		shareStrings=[],
 		convertedShareStrings="",
 		sheet,
@@ -70,7 +71,7 @@ exports.execute=function(config, target, callback) {
 	async.waterfall([
 			function(callback) {
 				temp.mkdir('xlsx', function(err, dir) {
-					dirPath=dir;
+					tmpDir=dir;
 					callback(err);
 				});
 			},
@@ -78,7 +79,7 @@ exports.execute=function(config, target, callback) {
 				// take our XLXS bare bones template and expand it to the file system. We will amend it.
 				try {
 					var zip=new zipper(template.XLSX);
-					zip.extractAllTo(dirPath);
+					zip.extractAllTo(tmpDir);
 					callback();
 				} catch(error) {
 					callback("extraction failed: " + error);
@@ -90,12 +91,12 @@ exports.execute=function(config, target, callback) {
 					if(err) {
 						return callback(err);
 					}
-					p=path.join(dirPath, 'xl', 'styles.xml');
+					p=path.join(tmpDir, 'xl', 'styles.xml');
 					fs.writeFile(p, styles, callback);
 				});
 			},
 			function(callback) {
-				p=path.join(dirPath, 'xl', 'worksheets', 'sheet.xml');
+				p=path.join(tmpDir, 'xl', 'worksheets', 'sheet.xml');
 				fs.open(p, 'a+', function(err, fd) {
 					sheet=fd;
 					callback(err);
@@ -199,18 +200,20 @@ exports.execute=function(config, target, callback) {
 					return callback();
 				}
 				var sharedStringsFront=template.sharedStringsFront.replace(/\$count/g, shareStrings.length);
-				p=path.join(dirPath, 'xl', 'sharedStrings.xml');
+				p=path.join(tmpDir, 'xl', 'sharedStrings.xml');
 				fs.writeFile(p, sharedStringsFront+convertedShareStrings+template.sharedStringsBack, callback);
 			},
 			function(callback) {
 				var _target=(target)
 					? path.resolve(target)
-					: path.join(dirPath, "sheet.zip");
+					: path.join(tmpDir, "sheet.zip");
+				console.log("excel.exec: _target=%s, cwd=%s", _target, tmpDir);
+				assert.ok(fs.existsSync(tmpDir));
 				// I'm having trouble with adm-zip's zip encoding. Not sure what the problem is exactly
 				// but spending more time on this problem than I meant to - going native.
 				async.waterfall([
 					function(done) {
-						child_process.exec(util.format('zip -r "%s" .', _target), {cwd: dirPath}, function(error) {
+						child_process.exec(util.format('zip -r "%s" .', _target), {cwd: tmpDir}, function(error) {
 							done(error);
 						});
 					},
