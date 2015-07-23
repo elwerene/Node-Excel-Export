@@ -1,17 +1,13 @@
 var assert=require('assert');
 var async=require('async');
 var fs=require('fs');
-var temp=require('temp').track();
+var temp=require('temp').track(true);
 var path=require('path');
 var zipper=require('adm-zip');
 var util=require('util');
 var child_process=require('child_process');
 var template=require('./resources/template');
 
-Date.prototype.getJulian=function() {
-	return Math.floor((this/86400000)-
-		(this.getTimezoneOffset()/1440)+2440587.5);
-};
 
 Date.prototype.oaDate=function() {
 	return (this-new Date(Date.UTC(1899, 11, 30)))/(24*60*60*1000);
@@ -207,29 +203,26 @@ exports.execute=function(config, target, callback) {
 				var _target=(target)
 					? path.resolve(target)
 					: path.join(tmpDir, "sheet.zip");
-				console.log("excel.exec: _target=%s, cwd=%s", _target, tmpDir);
-				assert.ok(fs.existsSync(tmpDir));
 				// I'm having trouble with adm-zip's zip encoding. Not sure what the problem is exactly
 				// but spending more time on this problem than I meant to - going native.
-				async.waterfall([
-					function(done) {
-						child_process.exec(util.format('zip -r "%s" .', _target), {cwd: tmpDir}, function(error) {
-							done(error);
-						});
-					},
-					function(done) {
-						if(target) {
-							callback(null, target);
-						} else {
-							fs.readFile(_target, done);
-						}
+				child_process.exec(util.format('zip -r "%s" .', _target), {cwd: tmpDir}, function(error) {
+					if(error) {
+						callback(error);
+					} else if(target) {
+						callback(null, target);
+					} else {
+						fs.readFile(_target, callback);
 					}
-				], callback);
+				});
 			}
-		],
-		function(err, result) {
-			temp.cleanup();
-			callback(err, result);
+		], function(error, result) {
+			// having periodic issues with this failing.  Log it as a warning but don't let it spoil the show
+			try {
+				temp.cleanup();
+			} catch(_error) {
+				console.warn("excel-export-fast: cleanup failed - %s", _error);
+			}
+			callback(error, result);
 		}
 	);
 };
