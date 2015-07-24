@@ -1,7 +1,7 @@
 var assert=require('assert');
 var async=require('async');
 var fs=require('fs');
-var temp=require('temp').track(true);
+var temp=require('temp').track(false);
 var path=require('path');
 var zipper=require('adm-zip');
 var util=require('util');
