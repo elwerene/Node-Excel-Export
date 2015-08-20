@@ -92,7 +92,7 @@ exports.execute=function(config, target, callback) {
 				});
 			},
 			function(callback) {
-				p=path.join(tmpDir, 'xl', 'worksheets', 'sheet.xml');
+				p=path.join(tmpDir, 'xl', 'worksheets', 'sheet1.xml');
 				fs.open(p, 'a+', function(err, fd) {
 					sheet=fd;
 					callback(err);
