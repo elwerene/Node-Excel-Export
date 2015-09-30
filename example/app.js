@@ -4,11 +4,11 @@ var app = express();
 
 app.get('/Excel', function(req, res){
     var conf ={};
-  // uncomment it for style example  
+  // uncomment it for style example
   // conf.stylesXmlFile = "styles.xml";
     conf.cols = [{
         caption:'string',
-        captionStyleIndex: 1,        
+        captionStyleIndex: 1,
         type:'string',
         beforeCellWrite:function(row, cellData){
              return cellData.toUpperCase();
@@ -20,10 +20,10 @@ app.get('/Excel', function(req, res){
         beforeCellWrite:function(){
             var originDate = new Date(Date.UTC(1899,11,30));
             return function(row, cellData, eOpt){
-              // uncomment it for style example 
+              // uncomment it for style example
               // if (eOpt.rowNum%2){
                 // eOpt.styleIndex = 1;
-              // }  
+              // }
               // else{
                 // eOpt.styleIndex = 2;
               // }
@@ -32,7 +32,7 @@ app.get('/Excel', function(req, res){
                 return 'N/A';
               } else
                 return (cellData - originDate) / (24 * 60 * 60 * 1000);
-            } 
+            }
         }()
         , width:20.85
     },{
@@ -51,8 +51,8 @@ app.get('/Excel', function(req, res){
     ];
   return nodeExcel.execute(conf, function(err, result) {
     if (err) {
-      console.log("ERROR!", err)
-      res.end('ERROR')
+      console.log("ERROR!", err);
+      res.end('ERROR');
       return;
     }
 
