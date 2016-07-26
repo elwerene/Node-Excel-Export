@@ -20,7 +20,7 @@ Setup configuration object before passing it into the execute method.  **cols** 
 
 
     var express = require('express');
-	var nodeExcel = require('excel-export-fast');
+	var nodeExcel = require('excel-export-es6');
 	var app = express();
 
 	app.get('/Excel', function(req, res){
@@ -50,7 +50,7 @@ Setup configuration object before passing it into the execute method.  **cols** 
                       return 'N/A';
                     } else
                       return (cellData - originDate) / (24 * 60 * 60 * 1000);
-				} 
+				}
 			}()
 		},{
 			caption:'bool',
