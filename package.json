@@ -1,6 +1,6 @@
 {
   "name": "excel-export-es6",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Simple and fast data set export to Excel xlsx file",
   "main": "index.js",
   "scripts": {
