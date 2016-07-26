@@ -21,7 +21,7 @@ exports.execute = (config, callback) => {
     let cols = config.cols, data = config.rows, colsLength = cols.length, p, files = [], styleIndex, k = 0, cn = 1, dirPath, shareStrings = [], convertedShareStrings = '', sheet, sheetPos = 0;
 
     let write = (str, callback) => sheet.write(str, callback);
-    //let write = (str, callback) => callback();
+
     let makeTemporaryFolder = (callback) => {
         return temp.mkdir('xlsx', (err, dir) => {
             if (err) {
