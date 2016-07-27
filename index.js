@@ -63,8 +63,6 @@ exports.execute = (configs, callback) => {
                     },
                     (callback) => {
                         let styleSheet = configs.find((config) => config.stylesXmlFile != null);
-                        styleSheet = path.join(dirPath, '..', 'styles.xml');
-                        console.log(styleSheet);
                         if (styleSheet != null) {
                             return fs.readFile(styleSheet, 'utf8', (err, styles) => {
                                 if (err) {
