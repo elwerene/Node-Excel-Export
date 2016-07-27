@@ -1,12 +1,12 @@
 {
-  "name": "excel-export-fast",
-  "version": "0.5.1",
+  "name": "excel-export-es6",
+  "version": "1.0.4",
   "description": "Simple and fast data set export to Excel xlsx file",
   "main": "index.js",
   "scripts": {
     "test": "mocha test/main"
   },
-  "repository": "https://github.com/elwerene/Node-Excel-Export",
+  "repository": "https://github.com/spearmootz/Excel-Export-ES6",
   "keywords": [
     "Excel",
     "xlsx"
@@ -15,16 +15,17 @@
     "Ber-Lin Lai <berlin.lai@gmail.com>",
     "René Rössler <rene@freshx.de>",
     "Christoph Tavan <dev@tavan.de>",
-    "Roman Krivtsov <raxpost@gmail.com>"
+    "Roman Krivtsov <raxpost@gmail.com>",
+    "Timothy Barkley <tbarkley29@gmail.com>"
   ],
   "license": "BSD",
   "dependencies": {
-    "async": "^0.2.10",
-    "jszip": "^2.5.0",
+    "async": "^2.0.0",
+    "jszip": "^3.0.0",
     "temp": "~0.7.0"
   },
   "devDependencies": {
     "mocha": "",
-    "should": ""
+    "chai": "^3.5.0"
   }
 }

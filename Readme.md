@@ -1,14 +1,29 @@
 # excel-export #
-
 A simple and fast node.js module for exporting data set to Excel xlsx file. Now completely asynchronous!
 
+## Updates ##
+
+#### Multisheet Support ####
+#### Consumes Less Memory ####
+#### ES6 ####
+#### Easier to read and maintain ####
+#### Accepts Array of Arrays (rows) or Stream of Array (row) ####
+#### updated dependencies ####
+#### Returns path of file instead of a buffer ####
+#### Update test ####
+
+## Just how important are these changes? ##
+The initial module allowed us to write no more than 100,000 rows, after the rewrite and using streams we are able to write more than excel can handle.
+
 ## Using excel-export ##
-Setup configuration object before passing it into the execute method.  **cols** is an array for column definition.  Column definition should have caption and type properties while width property is not required.  The unit for width property is character.   **beforeCellWrite** callback is optional.  beforeCellWrite is invoked with row, cell data and option object (eOpt detail later) parameters.  The return value from beforeCellWrite is what get written into the cell.  Supported valid types are string, date, bool and number.  **rows** is the data to be exported. It is an Array of Array (row). Each row should be the same length as cols.  Styling is optional.  However, if you want to style your spreadsheet, a valid excel styles xml file is needed.  An easy way to get a styles xml file is to unzip an existing xlsx file which has the desired styles and copy out the styles.xml file. Use **stylesXmlFile** property of configuartion object to specify the relative path and file name of the xml file.  Google for "spreadsheetml style" to learn more detail on styling spreadsheet.  eOpt in beforeCellWrite callback contains rowNum for current row number. eOpt.styleIndex should be a valid zero based index from cellXfs tag of the selected styles xml file.  eOpt.cellType is default to the type value specified in column definition.  However, in some scenario you might want to change it for different format. 
+If you want multiple sheets, just pass an array of configs.  only the first stylesXmlFile will be used.
+
+Setup configuration object before passing it into the execute method.  **cols** is an array for column definition.  Column definition should have caption and type properties while width property is not required.  The unit for width property is character.   **beforeCellWrite** callback is optional.  beforeCellWrite is invoked with row, cell data and option object (eOpt detail later) parameters.  The return value from beforeCellWrite is what get written into the cell.  Supported valid types are string, date, bool and number.  **rows** is the data to be exported. It is an Array of Array (row) or a Stream of Arrays (row). Each row should be the same length as cols.  Styling is optional.  However, if you want to style your spreadsheet, a valid excel styles xml file is needed.  An easy way to get a styles xml file is to unzip an existing xlsx file which has the desired styles and copy out the styles.xml file. Use **stylesXmlFile** property of configuartion object to specify the relative path and file name of the xml file.  Google for "spreadsheetml style" to learn more detail on styling spreadsheet.  eOpt in beforeCellWrite callback contains rowNum for current row number. eOpt.styleIndex should be a valid zero based index from cellXfs tag of the selected styles xml file.  eOpt.cellType is default to the type value specified in column definition.  However, in some scenario you might want to change it for different format. 
 
 
 
     var express = require('express');
-	var nodeExcel = require('excel-export-fast');
+	var nodeExcel = require('excel-export-es6');
 	var app = express();
 
 	app.get('/Excel', function(req, res){
@@ -38,7 +53,7 @@ Setup configuration object before passing it into the execute method.  **cols** 
                       return 'N/A';
                     } else
                       return (cellData - originDate) / (24 * 60 * 60 * 1000);
-				} 
+				}
 			}()
 		},{
 			caption:'bool',
@@ -53,11 +68,9 @@ Setup configuration object before passing it into the execute method.  **cols** 
             ["M&M<>'", new Date(Date.UTC(2013, 6, 9)), false, 1.61803],
             ["null date", null, true, 1.414]  
 	  	];
-	  	return nodeExcel.execute(conf, function(err, result) {
-		    res.setHeader('Content-Type', 'application/vnd.openxmlformats');
-		    res.setHeader("Content-Disposition", "attachment; filename=" + "Report.xlsx");
-		    res.end(result, 'binary');
-		});
+	  	return nodeExcel.execute(conf, function (err, path) {
+		    res.sendFile(path);
+	  	});
 	});
 
 	app.listen(3000);
