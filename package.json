@@ -15,11 +15,12 @@
     "Ber-Lin Lai <berlin.lai@gmail.com>",
     "René Rössler <rene@freshx.de>",
     "Christoph Tavan <dev@tavan.de>",
-    "Roman Krivtsov <raxpost@gmail.com>"
+    "Roman Krivtsov <raxpost@gmail.com>",
+    "Timothy Barkley <tbarkley29@gmail.com>"
   ],
   "license": "BSD",
   "dependencies": {
-    "async": "^0.2.10",
+    "async": "^2.0.0",
     "jszip": "^3.0.0",
     "temp": "~0.7.0"
   },
