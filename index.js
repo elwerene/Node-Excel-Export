@@ -15,7 +15,7 @@ var sheetBack = '</x:sheetData><x:printOptions horizontalCentered="0" verticalCe
 var sharedStringsFront = '<?xml version="1.0" encoding="UTF-8"?><x:sst xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main" uniqueCount="$count" count="$count">';
 var sharedStringsBack = '</x:sst>';
 exports.execute = function (config, callback) {
-    var cols = config.cols, data = config.rows, colsLength = cols.length, p, files = [], styleIndex, k = 0, cn = 1, dirPath, shareStrings = [], convertedShareStrings = '', sheet, sheetPos = 0;
+    var cols = config.cols, data = config.rows, colsLength = cols.length, p, files = [], styleIndex, k = 0, cn = 1, dirPath, shareStrings = [], shareStringsObj = {}, convertedShareStrings = '', sheet, sheetPos = 0;
     var write = function (str, callback) {
         var buf = new Buffer(str);
         var off = 0;
@@ -104,9 +104,11 @@ exports.execute = function (config, callback) {
         function (callback) {
             return async.eachSeries(cols, function (col, callback) {
                 var colStyleIndex = col.captionStyleIndex || 0;
-                var res = addStringCol(getColumnLetter(k + 1) + 1, col.caption, colStyleIndex, shareStrings);
+                var res = addStringCol(getColumnLetter(k + 1) + 1, col.caption, colStyleIndex, shareStrings, shareStringsObj);
                 k++;
-                convertedShareStrings += res[1];
+                if (res[1] !== null) {
+                    convertedShareStrings += res[1];
+                }
                 return write(res[0], callback);
             }, callback);
         },
@@ -150,7 +152,7 @@ exports.execute = function (config, callback) {
                         row += addBoolCol(getColumnLetter(j + 1) + currRow, cellData, styleIndex);
                         break;
                     default:
-                        var res = addStringCol(getColumnLetter(j + 1) + currRow, cellData, styleIndex, shareStrings, convertedShareStrings);
+                        var res = addStringCol(getColumnLetter(j + 1) + currRow, cellData, styleIndex, shareStrings, shareStringsObj);
                         row += res[0];
                         convertedShareStrings += res[1];
                     }
@@ -235,21 +237,22 @@ var addBoolCol = function (cellRef, value, styleIndex) {
     }
     return '<x:c r="' + cellRef + '" s="' + styleIndex + '" t="b"><x:v>' + value + '</x:v></x:c>';
 };
-var addStringCol = function (cellRef, value, styleIndex, shareStrings) {
+var addStringCol = function (cellRef, value, styleIndex, shareStrings, shareStringsObj) {
     styleIndex = styleIndex || 0;
     if (value === null) {
         return [
             '',
-            ''
+            null
         ];
     }
     if (typeof value === 'string') {
         value = value.replace(/&/g, '&amp;').replace(/'/g, '&apos;').replace(/>/g, '&gt;').replace(/</g, '&lt;');
     }
-    var convertedShareStrings = '';
-    var i = shareStrings.indexOf(value);
-    if (i < 0) {
+    var convertedShareStrings = null;
+    var i = shareStringsObj[value];
+    if (i === undefined) {
         i = shareStrings.push(value) - 1;
+        shareStringsObj[value] = i;
         convertedShareStrings = '<x:si><x:t>' + value + '</x:t></x:si>';
     }
     return [
